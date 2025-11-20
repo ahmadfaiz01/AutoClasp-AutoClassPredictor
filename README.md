@@ -1,6 +1,8 @@
 # AutoClasp \- AutoML for Classification
 
-**Members:**
+## Team / collaboration
+
+We are 2 people on this project.
 - Muhammad Ahmad
 - Arham Ali
 
@@ -39,8 +41,16 @@ Right now I\'m building this step by step in Streamlit with a modular Python str
 
 ## How to run it locally
 
-```bash
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
+
+Then open the URL Streamlit prints (usually http://localhost:8501).
+
+## Tech stack
+- Python 
+- Streamlit 
+- pandas / numpy 
+- scikit-learn 
+- matplotlib / seaborn / plotly (for plots)
