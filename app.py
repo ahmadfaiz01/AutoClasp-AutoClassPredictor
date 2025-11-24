@@ -14,7 +14,7 @@ def init_page():
     try:
         st.logo("data/logo.png")
     except Exception:
-        st.sidebar.image("data/logo.png", width=180)
+        st.sidebar.image("data/logo.png", width=160)
 
 def init_session_state():
     # Ensuring keys exist in session state, if they dont set default values
@@ -35,7 +35,7 @@ def pipeline_timeline():
         "2. EDA",
         "3. Issues Detection",
         "4. PreProcessing",
-        "5. Training"
+        "5. Training",
         "6. Evaluation",
         "7. Best Model Selection",
         "8. Report"
@@ -50,16 +50,27 @@ def main():
     init_session_state()
     pipeline_timeline()
 
-    st.title("Lets get started with AutoCLASP!")
+    # centered hero layout
+    left, center, right = st.columns([1.25, 2, 1])
+    with left:
+        st.image("data/logo.png", width=370)
+        st.write("\n")
+    with center:
+        st.title("AutoCLASP")
+        st.markdown(
+            "A minimal pipeline to upload data, run automated EDA, "
+            "detect issues, preprocess features, and train classifiers."
+        )
+        st.markdown("---")
 
-    st.markdown(
-        "Use the pages in the sidebar to:\n"
-        "1\. Upload your dataset and run automated EDA.\n"
-        "2\. Detect issues and configure preprocessing.\n"
-        "3\. Train, optimize, and compare models.\n"
-        "4\. View explanations and download a final report."
-    )
-    st.info("Start with the `Upload \& EDA` page from the left sidebar.")
+        st.markdown("### Let's Get Started !")
+        if st.button("1. Upload your dataset", use_container_width=True):
+            st.switch_page("pages/upload_and_eda.py")
+
+        st.markdown("---")
+        st.caption(
+            "Tip: You can also navigate using the sidebar pages on the left."
+        )
 
 if __name__ == "__main__":
     main()

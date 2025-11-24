@@ -1,4 +1,3 @@
-from typing import Tuple
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -6,27 +5,31 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 
-
+# Function to detect outliers using IQR method
 def detect_outliers_iqr(df: pd.DataFrame) -> pd.DataFrame:
-    # List of dictionaries with keys (column and outlier count)
+    # List of dictionaries with keys (column, outlier count, percentage)
     outlier_data = []
 
     # Selecting numeric columns
     numeric_df = df.select_dtypes(include=[np.number])
 
-    # Removing NaN values and storing in temp df
-    cleaned_df = df.dropna()
 
     # Calculating IQR for each column
     for col in numeric_df.columns:
-        q1 = cleaned_df[col].quantile(0.25)
-        q3 = cleaned_df[col].quantile(0.75)
+        # Removing NaN values of the column and storing in temp series
+        column_values = numeric_df[col].dropna()
+
+        # Gives us the value below which 25% of data lies
+        q1 = column_values.quantile(0.25)
+
+        # Gives us the value below which 75% of data lies
+        q3 = column_values.quantile(0.75)
         iqr = q3 - q1
 
         # If a column has no IQR, set its outlier count to 0
         if iqr == 0:
             # Saving the outlier info into list
-            outlier_data.append({"column": col, "outlier_count": 0})
+            outlier_data.append({"column": col, "outlier_count": 0, "percentage":0})
             continue
 
         # Defining outlier bounds
@@ -34,14 +37,48 @@ def detect_outliers_iqr(df: pd.DataFrame) -> pd.DataFrame:
         upper_bound = q3 + 1.5 * iqr
 
         # Flagging outliers
-        # For a particular column, go into column we are in and mark datapoints as outliers which out of bounds
-        outliers = cleaned_df[(cleaned_df[col] < lower_bound) | (cleaned_df[col] > upper_bound)]
+        # For a particular column, go into column we are in and mark datapoints as outliers which are out of bounds
+        outliers = (column_values < lower_bound) | (column_values > upper_bound)
 
         # Storing into the list
-        outlier_data.append({"column": col, "outlier_count": int(outliers.sum())})
+        outlier_data.append({"column": col, "outlier_count": int(outliers.sum()), "percentage":((outliers.sum()) / len(column_values)) * 100})
 
     # Returning the list as a dataframe so streamlit interpret it
     return pd.DataFrame(outlier_data)
+
+# Function to detect outliers using Z-Score method
+def detect_outliers_zscore(df: pd.DataFrame) -> pd.DataFrame:
+    # List of dictionaries with keys (column, outlier count, percentage)
+    outlier_data = []
+
+    # Selecting numeric columns
+    numeric_df = df.select_dtypes(include=[np.number])
+
+
+    # Iterating over columns and finding their outlier counts with Z-Score
+    for col in numeric_df.columns:
+        # Removing NaN values from column and storing in temp series
+        column_values = numeric_df[col].dropna()
+
+        # Calculating mean for each column
+        mean = column_values.mean()
+        std = column_values.std()
+
+        # If std is 0, set outlier count to 0
+        if std == 0:
+            outlier_data.append(({"column": col, "outlier_count": 0, "percentage":0}))
+        else:
+            # Calculating Z-Scores
+            z = (column_values - mean) / std
+
+            # Marking values as outliers with Absolute Z-Score > 3
+            outliers = z.abs() > 3
+            # Storing columns info into the list
+            outlier_data.append({"column": col, "outlier_count": int(outliers.sum()), "percentage":((outliers.sum()) / len(column_values)) * 100})
+
+    return pd.DataFrame(outlier_data)
+
+# Function to show outlier summary using both IQR and Z-Score methods
 def show_outlier_summary(df: pd.DataFrame) -> None:
 
     # Calling the outlier detection functions
@@ -56,7 +93,32 @@ def show_outlier_summary(df: pd.DataFrame) -> None:
     st.dataframe(z_df)
 
 
+def show_distributions(df: pd.DataFrame) -> None:
+# Histogram for Numeric Values
+    numeric_df = df.select_dtypes(include=[np.number])
+    if numeric_df.empty:
+        st.info("No numeric columns available for distribution plots.")
+    else:
+        for col in numeric_df.columns:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            sns.histplot(numeric_df[col].dropna(), kde=True, ax=ax)
+            ax.set_title(f"Distribution of {col}")
+            st.pyplot(fig)
 
+# Bar Plots for Categorical Values
+    categorical_df = df.select_dtypes(include=['object', 'category', 'bool'])
+    if categorical_df.empty:
+        st.info("No categorical columns available for distribution plots.")
+    else:
+        for col in categorical_df.columns:
+            fig = px.bar(
+                categorical_df[col].value_counts().reset_index(),
+                x="index",
+                y=categorical_df[col].name,
+                title=f"Distribution of {col}",
+            )
+            fig.update_layout(xaxis_title=col, yaxis_title="Count")
+            st.plotly_chart(fig, use_container_width=True)
 
 # Function to show correlation matrix as a heatmap
 def show_correlation_heatmap(df: pd.DataFrame) -> None:
@@ -88,7 +150,7 @@ def show_correlation_heatmap(df: pd.DataFrame) -> None:
         st.pyplot(fig)
 
 
-
+# This is function for Task A
 # Funtion to show class distribution in target column
 def show_class_distribution(df: pd.DataFrame, target_col: str) -> None:
     # Validating if target_col exists in df
@@ -116,7 +178,7 @@ def show_class_distribution(df: pd.DataFrame, target_col: str) -> None:
             x="class",
             y="count",
             text=distribution_summary["percentage"].round(2).astype(str) + "%",
-            title=f"Class distribution: {target_col}",
+            title=f"Class distribution of {target_col}",
         )
         fig.update_traces(textposition="outside")
         fig.update_layout(xaxis_title="Class", yaxis_title="Count")
@@ -145,12 +207,12 @@ def show_missing_values(df: pd.DataFrame) -> None:
     )
 
     # Global missing data percentage
-    golbal_missing_percentage = total_missing.values.sum() / total_data * 100
+    global_missing_percentage = total_missing.values.sum() / total_data * 100
 
     # Displaying the missing value summary
     st.metric(
         label="Overall Missing Data Percentage",
-        value=f"{golbal_missing_percentage:.2f}%",
+        value=f"{global_missing_percentage:.2f}%",
     )
     st.dataframe(missing_summary)
 
