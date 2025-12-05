@@ -21,7 +21,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-SearchType = Literal["grid", "random"]
+SearchType = ["grid", "random"]
 
 
 # Function that returns a dictionary of base models
@@ -129,8 +129,8 @@ def train_and_optimize_models(
     search_type: SearchType = "grid",
     primary_metric: str = "f1_weighted",
     cv_splits: int = 5,
-    n_iter_random: int = 20,
-    random_state: int = 42 ):
+    iterations_random_search: int = 20,
+    random_state: int = 42):
 
     models = get_base_models(random_state)
     grids = get_param_grids()
@@ -196,7 +196,7 @@ def train_and_optimize_models(
             search = RandomizedSearchCV(
                 estimator=base_model,
                 param_distributions=param_dist if param_dist else param_grid,
-                n_iter=n_iter_random,
+                n_iter=iterations_random_search,
                 scoring=primary_metric,
                 cv=cv,
                 n_jobs=-1,
