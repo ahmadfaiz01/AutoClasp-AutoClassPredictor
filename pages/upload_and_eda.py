@@ -4,6 +4,7 @@ import pandas as pd
 # Importing EDA related utilities
 from autoclasp import eda as eda_module
 
+
 def main():
     # Stage 1 - Dataset Uploading and Basic Information
     st.title("Stage 1: Dataset Uploading and Basic Information")
@@ -28,13 +29,16 @@ def main():
         except Exception as e:
             st.error(f"Error reading file: {e}")
             return
-
+                     
     # Storing the uploaded file and dataframe in session state
         st.session_state.uploaded_file = file_uploaded
         st.session_state.dataframe = df
 
         st.success("File uploaded successfully!")
+    
 
+    
+        
     # A2 - Basic Data Information
         st.markdown("### Stage 1.2: Basic Data Information")
         # No need to except handle since it is already done above
@@ -117,6 +121,14 @@ def main():
         st.session_state.train_size = train_size
         eda_module.show_train_test_split_summary(df, train_size)
 
+        # Navigate to the next page(issues and preprocessing)
+        st.markdown("---")
+        st.markdown("### Ready to move forward?")
+        
+        # Only shows next button if data is uploaded and target column is selected
+        if st.session_state.dataframe is not None and st.session_state.target_column is not None:
+            if st.button("Next: Isuues Detection and Preprocessing", use_container_width=True , type="primary"):
+                st.switch_page("pages/issues_and_preprocessing.py")
     else:
         st.info("Please upload a dataset to proceed further")
 
