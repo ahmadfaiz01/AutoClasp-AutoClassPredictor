@@ -303,6 +303,11 @@ def main():
         )
         st.dataframe(shape_df, use_container_width=True)
 
+        # Navigation button to training page
+        st.markdown("---")
+        if st.button("Proceed to Model Training & Optimization", type="primary", use_container_width=True):
+            st.switch_page("pages/training_and_optimization.py")
+
 
 if __name__ == "__main__":
     main()
