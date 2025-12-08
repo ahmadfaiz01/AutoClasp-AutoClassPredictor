@@ -101,3 +101,5 @@ def show_training_and_optimization_page():
 
         with st.expander("Show CV results table", expanded=True):
             st.dataframe(cv_results_df, use_container_width=True)
+
+show_training_and_optimization_page()
