@@ -102,4 +102,12 @@ def show_training_and_optimization_page():
         with st.expander("Show CV results table", expanded=True):
             st.dataframe(cv_results_df, use_container_width=True)
 
-show_training_and_optimization_page()
+        # Navigation button to Model Comparison Dashboard
+        st.markdown("---")
+        st.info("Training complete! Proceed to evaluate models on test data and compare their performance.")
+        if st.button("Go to Model Comparison & Evaluation", type="primary", use_container_width=True):
+            st.switch_page("pages/comparison_and_explainability.py")
+
+
+if __name__ == "__main__":
+    show_training_and_optimization_page()

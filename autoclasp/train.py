@@ -83,7 +83,7 @@ def get_param_grids():
             "kernel": ["rbf", "linear"],
             "gamma": ["scale", "auto"],
         },
-        "Rule-based": {}                            # No hyperparameters
+        "Rule-based (Stratified Baseline)": {}                            # No hyperparameters
     }
 
 
@@ -119,7 +119,7 @@ def get_param_distributions():
             "kernel": ["rbf", "linear"],
             "gamma": ["scale", "auto"],
         },
-        "Rule-based": {}                            # No hyperparameters
+        "Rule-based (Stratified Baseline)": {}                            # No hyperparameters
     }
 
 

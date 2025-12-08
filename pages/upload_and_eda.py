@@ -12,43 +12,56 @@ def main():
     # Asking User to upload a file
     st.markdown("### Stage 1.1: Upload Your Dataset")
 
-    # Handling the input of the dataset
-    file_uploaded = st.file_uploader(
-        "### Upload your dataset",
-        type=["csv", "xlsx", "xls"],
-        help= "CSV, XLSX, XLS supported formats only"
-    )
-
-    # If a file is uploaded,check the type and than read it into a DataFrame
-    if file_uploaded is not None:
-        try:
-            if file_uploaded.name.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(file_uploaded)
-            else:
-                df = pd.read_csv(file_uploaded)
-        except Exception as e:
-            st.error(f"Error reading file: {e}")
-            return
-                     
-    # Storing the uploaded file and dataframe in session state
-        st.session_state.uploaded_file = file_uploaded
-        st.session_state.dataframe = df
-
-        st.success("File uploaded successfully!")
-    
-
-    
+    # Check if data already exists in session
+    if st.session_state.dataframe is not None:
+        st.success("Dataset already loaded!")
         
-    # A2 - Basic Data Information
+        # Give option to upload new dataset
+        if st.button("Upload New Dataset"):
+            st.session_state.uploaded_file = None
+            st.session_state.dataframe = None
+            st.session_state.df = None
+            st.session_state.target_column = None
+            st.rerun()
+    else:
+        # Handling the input of the dataset
+        file_uploaded = st.file_uploader(
+            "Upload your dataset",
+            type=["csv", "xlsx", "xls"],
+            help= "CSV, XLSX, XLS supported formats only"
+        )
+
+        # If a file is uploaded, check the type and read it into a DataFrame
+        if file_uploaded is not None:
+            try:
+                if file_uploaded.name.endswith(('.xlsx', '.xls')):
+                    df = pd.read_excel(file_uploaded)
+                else:
+                    df = pd.read_csv(file_uploaded)
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+                return
+                        
+            # Storing the uploaded file and dataframe in session state
+            # Using both 'dataframe' and 'df' keys for compatibility
+            st.session_state.uploaded_file = file_uploaded
+            st.session_state.dataframe = df
+            st.session_state.df = df  # This is what final_report.py looks for
+            
+            st.success("File uploaded successfully!")
+            st.rerun()  # Reload to show the data instead of uploader
+
+    # Only show data analysis if dataframe exists
+    if st.session_state.dataframe is not None:
+        df = st.session_state.dataframe
+        
+        # A2 - Basic Data Information
         st.markdown("### Stage 1.2: Basic Data Information")
-        # No need to except handle since it is already done above
-        # Code would not reach here of file is not uploaded and df is not created
 
         st.write("Here is a preview of your dataset:")
         st.dataframe(df.head(5))  # Displaying first 5 rows of the dataframe
 
         # No. of Rows and Columns
-        # List of dictionary (rows:count and columns:count
         stats = [
             {
                 "Metric": "Rows",
@@ -62,7 +75,6 @@ def main():
         data_shape = pd.DataFrame(stats)
         st.markdown("### a) Data Shape")
         st.write(data_shape)
-
 
         # Feature Names and Datatypes
         st.write("### b) Feature Names and Data Types")
@@ -87,14 +99,14 @@ def main():
         target_col = st.selectbox(
             "Select the target column for class distribution",
             options=df.columns.tolist(),
+            index=df.columns.tolist().index(st.session_state.target_column) if st.session_state.target_column in df.columns else 0,
             placeholder="Select target column"
         )
         st.session_state.target_column = target_col     # Updating target column in session state
         # Calling the show class distribution function
         eda_module.show_class_distribution(df, target_col)
 
-
-    # Stage 2 - EDA
+        # Stage 2 - EDA
         st.title("Stage 2: Exploratory Data Analysis (EDA)")
 
         # Calling EDA utilities from eda_module (from eda.py)
@@ -127,7 +139,7 @@ def main():
         
         # Only shows next button if data is uploaded and target column is selected
         if st.session_state.dataframe is not None and st.session_state.target_column is not None:
-            if st.button("Next: Isuues Detection and Preprocessing", use_container_width=True , type="primary"):
+            if st.button("Next: Issues Detection and Preprocessing", width="stretch", type="primary"):
                 st.switch_page("pages/issues_and_preprocessing.py")
     else:
         st.info("Please upload a dataset to proceed further")
