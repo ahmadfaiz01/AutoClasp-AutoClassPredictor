@@ -111,13 +111,22 @@ def show_distributions(df: pd.DataFrame) -> None:
         st.info("No categorical columns available for distribution plots.")
     else:
         for col in categorical_df.columns:
+            # Build a stable dataframe with explicit column names
+            vc = categorical_df[col].value_counts(dropna=False).reset_index(name='count')
+            vc = vc.rename(columns={'index': col})
+            # compute percentage for labels
+            vc['percentage'] = (vc['count'] / vc['count'].sum()) * 100
+
+            # Use explicit column names for px.bar
             fig = px.bar(
-                categorical_df[col].value_counts().reset_index(),
-                x="index",
-                y=categorical_df[col].name,
+                vc,
+                x=col,
+                y='count',
+                text=vc['percentage'].round(2).astype(str) + '%',
                 title=f"Distribution of {col}",
             )
             fig.update_layout(xaxis_title=col, yaxis_title="Count")
+            fig.update_traces(textposition="outside")
             st.plotly_chart(fig, use_container_width=True)
 
 # Function to show correlation matrix as a heatmap
@@ -230,3 +239,41 @@ def show_train_test_split_summary(df: pd.DataFrame, train_size: float) -> None:
     # Displaying the train-test split summary
     st.write(f"Train Size: {train_size*100:.2f}% \t Train Rows: {train_rows}")
     st.write(f"Test Size: {(1-train_size)*100:.2f}% \t Test Rows: {test_rows}")
+
+
+# Function to process data to resolve plotting issues
+def report_non_numeric(df: pd.DataFrame, sample_limit: int = 10) -> pd.DataFrame:
+    """Return a small DataFrame reporting columns with non-numeric entries."""
+    rows = []
+    for col in df.columns:
+        coerced = pd.to_numeric(df[col].astype(str).str.strip().replace(',', '.'), errors='coerce')
+        n_invalid = coerced.isna().sum() - df[col].isna().sum()
+        if n_invalid > 0:
+            sample_vals = list(pd.Series(df[col].astype(str).unique())[:sample_limit])
+            rows.append({"column": col, "non_numeric_count": int(n_invalid), "sample_values": sample_vals})
+    return pd.DataFrame(rows)
+
+def clean_and_coerce(df: pd.DataFrame, threshold: float = 0.5) -> pd.DataFrame:
+    """
+    Clean string columns and coerce numeric-like columns to numeric.
+    Columns where at least `threshold` fraction become numeric are converted.
+    Returns a new DataFrame (doesn't mutate original).
+    """
+    df2 = df.copy()
+    # Basic string cleaning
+    for col in df2.select_dtypes(include=['object', 'string']).columns:
+        s = df2[col].astype(str)
+        s = s.str.strip()
+        s = s.str.replace(r'\s+', ' ', regex=True)
+        s = s.str.replace(',', '.', regex=False)  # comma decimal -> dot
+        s = s.replace({'nan': pd.NA})
+        df2[col] = s
+
+    # Try to coerce columns to numeric when most values make sense
+    for col in df2.columns:
+        coerced = pd.to_numeric(df2[col], errors='coerce')
+        valid_frac = coerced.notna().mean()
+        if valid_frac >= threshold:
+            df2[col] = coerced
+
+    return df2

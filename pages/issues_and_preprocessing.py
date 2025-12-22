@@ -92,7 +92,7 @@ def main():
         [{"Metric": "Rows", "Count": df.shape[0]},
          {"Metric": "Columns", "Count": df.shape[1]}]
     )
-    st.markdown("### a) Data Shape")
+    st.markdown("### Data Shape")
     st.write(stats)
     st.write(f"Target column selected: {target_col}")
 
@@ -187,14 +187,25 @@ def main():
 
     # Stage 4 - Preprocessing Configuration (suggestions and apply)
     st.markdown("---")
-    st.markdown("#### Stage 4: Preprocessing Configuration")
+    # Emphasizing
+    st.markdown(
+        "<div style='background:#800000; padding:8px; border-radius:6px; border-left:4px; margin-bottom:8px;'>"
+        "<strong>To prevent errors: Please apply relevant preprocessing on your data according to your knowledge."
+        " AutoClasP only detects issues and proposes fixes. "
+        "Please review the proposed preprocessing steps "
+        "and use your domain knowledge to adjust them for the best results.</strong>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### Stage 4: Preprocessing Configuration")
 
     # Decisions store and detected reference
     decisions = st.session_state.user_decisions
     detected = st.session_state.detected_issues
 
     # Missing values configuration
-    st.markdown("##### Missing Values")
+    st.markdown("#### Missing Values")
     mv_method = st.selectbox(
         "Imputation method",
         options=["median", "mean", "mode", "constant", "drop_rows", "drop_columns"],
@@ -205,25 +216,25 @@ def main():
     decisions["missing_values"] = {"apply": mv_apply, "method": mv_method, "constant_value": mv_const_val}
 
     # Outliers configuration
-    st.markdown("##### Outliers")
+    st.markdown("#### Outliers")
     ol_method = st.selectbox("Outlier handling", options=["cap", "remove", "none"], key="ol_method")
     ol_apply = st.checkbox("Apply outlier handling", key="ol_apply", value=False)
     ol_columns = list(detected.get("outliers", {}).get("details", {}).keys())
     decisions["outliers"] = {"apply": ol_apply, "method": ol_method, "columns": ol_columns}
 
     # Constant features configuration
-    st.markdown("##### Constant/Near-Constant Features")
+    st.markdown("#### Constant/Near-Constant Features")
     cf_columns = detected.get("constant_features", {}).get("columns", [])
     cf_apply = st.checkbox("Remove constant features", key="cf_apply", value=False)
     decisions["constant_features"] = {"apply": cf_apply, "columns": cf_columns}
 
     # Duplicates configuration
-    st.markdown("##### Duplicates")
+    st.markdown("#### Duplicates")
     dup_apply = st.checkbox("Remove duplicate rows", key="dup_apply", value=False)
     decisions["duplicates"] = {"apply": dup_apply}
 
     # Encoding
-    st.markdown("##### Encoding")
+    st.markdown("#### Encoding")
     enc_options = ["onehot", "ordinal", "none"]
     enc_default = st.session_state.user_decisions.get("encoding", "none")
     encoding = st.selectbox(
@@ -235,7 +246,7 @@ def main():
     decisions["encoding"] = encoding
 
     # Scaling
-    st.markdown("##### Scaling")
+    st.markdown("#### Scaling")
     sc_options = ["none", "standard", "minmax"]
     sc_default = st.session_state.user_decisions.get("scaling", "none")
     scaling = st.selectbox(
@@ -247,14 +258,14 @@ def main():
     decisions["scaling"] = scaling
 
     # Train-test split
-    st.markdown("##### Train-Test Split")
+    st.markdown("#### Train-Test Split")
     default_ts = float(st.session_state.get("train_size", 0.8))
     train_size = st.slider("Train size", 0.5, 0.95, default_ts, 0.05, key="train_size_ui")
     st.session_state.train_size = train_size
 
     # Stage 5 - Apply preprocessing
     st.markdown("---")
-    st.markdown("#### Stage 5: Apply Preprocessing")
+    st.markdown("### Stage 5: Apply Preprocessing")
 
     if st.button("Apply preprocessing"):
         # Validate that the user selected at least one preprocessing action
